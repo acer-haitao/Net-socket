@@ -1,0 +1,223 @@
+【1】int getsockopt(int sockfd, int level, int optname,
+                      void *optval, socklen_t *optlen);
+     功能：获取网络套接字的属性信息
+     参数：sockfd  套接字
+           level   协议的层次   SOL_SOCKET   应用层
+                                IPPROTO_TCP  传输控制层
+                                IPPROTO_IP   网络层
+           optname  SO_REUSEADDR  重复绑定
+                    SO_BROADCAST  广播属性
+                    SO_SNDBUF     发送缓存区的大小
+                    SO_RCVBUF     接收缓存区的大小
+
+          optval    相关操作的值
+          optlen    值的大小
+     
+     返回值：成功0， 出错-1          
+ 
+     
+
+【2】int setsockopt(int sockfd, int level, int optname,
+                      const void *optval, socklen_t optlen);
+     功能：设置网络套接字的属性信息
+     参数：sockfd  套接字
+           level   协议的层次   SOL_SOCKET   应用层
+                                IPPROTO_TCP  传输控制层
+           optname  SO_REUSEADDR  重复绑定
+                    SO_BROADCAST  广播属性
+                    SO_SNDBUF     发送缓存区的大小
+                    SO_RCVBUF     接收缓存区的大小
+                    SO_RCVTIMEO
+
+          optval    相关操作的值
+          optlen    值的大小
+     
+     返回值：成功0， 出错-1      
+
+【3】网络的超时检测
+     超时检测的必要性
+       避免进程在没有数据时无限制地阻塞
+       当设定的时间到时，进程从原操作返回继续运行
+
+     1-- 设置socket的属性 SO_RCVTIMEO
+         setsockopt();
+
+         struct timeval {
+       __kernel_time_t     tv_sec;     /* seconds */
+       __kernel_suseconds_t    tv_usec;    /* microseconds */
+      };
+
+       struct timeval  tv;
+
+       tv.tv_sec = 5;   //  设置5秒时间
+       tv.tv_usec = 0;
+ 
+       setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO,  &tv,  
+                       sizeof(tv));     //  设置接收超时
+       recv() / recvfrom()          //   从socket读取数据
+
+
+     2-- 使用select 实现超时检测
+        struct fd_set rdfs;
+        struct timeval  tv = {5 , 0};   // 设置5秒时间
+
+        FD_ZERO(&rdfs);
+        FD_SET(sockfd, &rdfs);
+
+       if (select(sockfd+1, &rdfs, NULL, NULL, &tv) > 0)   // socket就绪
+       {
+          recv() /  recvfrom()    //  从socket读取数据
+       }
+
+     3-- 定时器
+         设置定时器(timer), 捕捉SIGALRM信号
+
+        int sigaction(int signum, const struct sigaction *act,
+                     struct sigaction *oldact);
+         功能：注册一个信号
+         参数：signum  信号
+               act     新的信号属性行为
+               oldact  旧的信号属性行为
+         返回值：成功0，出错 -1
+
+         struct sigaction {
+               void     (*sa_handler)(int);  // 信号处理函数
+               void     (*sa_sigaction)(int, siginfo_t *, void *);
+               sigset_t   sa_mask;
+               int        sa_flags;  //  SA_RESTART  设置系统调用的自重启属性，默认情况下为真
+               void     (*sa_restorer)(void);
+         };
+
+       
+       struct sigaction act;
+       
+       
+       sigaction(SIGALRM, NULL, &act);
+       act.sa_handler = handler;
+       act.sa_flags &= ~SA_RESTART;   // 设置系统调用的自重启属性为假
+       sigaction(SIGALRM, &act, NULL);
+
+
+【4】广播
+   前面介绍的数据包发送方式只有一个接受方，称为单播 
+   如果同时发给局域网中的所有主机，称为广播
+     
+   广播地址
+   以192.168.1.0 (255.255.255.0) 网段为例，最大的主机地址192.168.1.255代表该网段的广播地址
+   发到该地址的数据包被所有的主机接收
+   255.255.255.255在所有网段中都代表广播地址
+
+【5】广播的发送流程
+     1-- 创建用户数据报套接字
+          socket();
+ 
+     2-- 填充网络结构体信息
+         广播地址
+
+     3-- 设置发送广播权限
+
+        缺省创建的套接字不允许广播数据包，需要设置属性
+        setsockopt可以设置套接字属性
+        
+        int on = 1;
+        setsockopt(sockfd, SOL_SOCKET,SO_BROADCAST, &on, sizeof(on));
+
+     5--  发送数据包
+
+
+【6】广播的接收流程
+     1-- 创建用户数据报套接字
+
+     2-- 绑定广播的IP地址和端口
+         绑定的端口必须和发送方指定的端口相同
+
+     3-- 等待接收数据
+
+【7】组播
+     组播(又称为多播)是一种折中的方式。只有加入某个多播组的主机才能收到数据。
+
+
+     D 类地址
+     不分网络地址和主机地址，第1字节的前4位固定为1110
+     224.0.0.1 – 239.255.255.255
+
+     从225.0.0.1 ....
+
+【8】组播的发送和接收的流程
+    1-- 发送流程
+        创建用户数据报套接字
+        socket
+
+        接收方地址指定为组播地址
+
+        指定端口信息
+
+       发送数据包
+
+
+    2-- 接收流程
+       创建用户数据报套接字
+
+       加入多播组
+       setsockopt（）；
+
+       绑定组播IP地址和端口
+       绑定的端口必须和发送方指定的端口相同
+
+       等待接收数据
+
+
+       struct ip_mreq
+      {
+        struct  in_addr  imr_multiaddr;
+        struct  in_addr  imr_interface;
+      };
+
+      struct  ip_mreq  mreq;
+      bzero(&mreq, sizeof(mreq));  // 给结构体内存清零
+      mreq.imr_multiaddr.s_addr = inet_addr(“224.10.10.1”);
+      mreq.imr_interface.s_addr = htonl(INADDR_ANY);
+
+      setsockopt(sockfd, IPPROTO_IP, IP_ADD_MEMBERSHIP, &mreq,  
+                  sizeof(mreq));
+
+
+     INADDR_ANY ：代表任意的本机IP地址
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+         
+    
+ 

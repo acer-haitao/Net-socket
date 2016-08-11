@@ -1,0 +1,167 @@
+【1】socket本地套接字通信
+
+     1-- TCP服务器端
+           socket(PF_UNIX, SOCK_STREAM, 0)
+
+           bind(，本地地址， )
+
+           listen(，)
+
+           accept(，，)
+
+           recv() / send()
+
+                   ……
+  
+      2-- TCP 客户端
+         socket(PF_UNIX, SOCK_STREAM, 0)
+
+         bind(，本地地址， )   //   可选
+
+         connect(，，)
+
+         recv() / send()
+
+                          ……
+
+
+     本地套接字通信需要填充的网络结构体信息。
+
+      #define UNIX_PATH_MAX   108
+    
+      struct sockaddr_un {                                                                                              
+        __kernel_sa_family_t sun_family; /* AF_UNIX */
+        char sun_path[UNIX_PATH_MAX];   /* pathname */
+      };
+
+      struct sockaddr_un
+      {
+       __SOCKADDR_COMMON (sun_);
+       char sun_path[108];     /* Path name.  */                                                                     
+       };
+
+
+
+
+【2】udp 本地套接字通信
+          
+    1-- udp 服务器端
+      
+     socket(PF_UNIX, SOCK_DGRAM, 0)
+
+     bind(，本地地址， )
+
+     recvfrom() 
+
+     sendto()
+
+    2-- udp 客户端
+      socket(PF_UNIX, SOCK_DGRAM, 0)
+
+      bind(，本地地址， )     //  必须绑定自己的地址信息
+
+      sendto() 
+
+      recvfrom()    //  若没有绑定地址，无法接收数据
+
+       ……
+
+
+【3】数据据
+     1-- 安装数据库
+         sudo  dpkg  -i   *.deb
+
+     2-- sqlite 命令 ，系统级命令， 以“.”开头
+         .help　帮助 
+         .quit  退出
+         .exit
+         .schema 查看表的结构图
+         .table 列出当前数据库中的表的数量
+
+
+     3-- 普通sql命令 ， “；”表示一条sql命令的结束标志
+
+         创建一张表
+         create table stu (id integer, name char, sex char, score int);
+
+         删除一张表
+         drop table  stu;
+
+         插入一条记录
+         insert into stu values(1001, 'zhangsan', 'm', 80);
+
+         查看表中的记录
+         select * from stu;
+
+         select * from stu where id=1002;
+         select * from stu where id=1002 and name='lisi';
+
+         更新表中的记录
+         update stu set score=85 where id=1002;
+         update stu set sex='f' ,name='lucy' where id=1002;
+
+         删除一条记录
+         delete from stu where id=1002;
+
+         增加一列
+         alter table stu add column score int;
+
+         删除一列（sqlite不支持直接删除字段列）
+         create table stu1 as select id, score from stu;
+         drop table stu;
+         alter table stu1 rename to stu;
+
+     4-- 数据库的API 操作
+         
+
+
+
+
+
+  
+         
+         
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

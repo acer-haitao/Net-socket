@@ -1,0 +1,224 @@
+【1】网络的历史
+     ARPA  --> NCP
+
+【2】网络体系结构
+     网络体系结构即指网络的层次结构和每层所使用协议的集合
+
+【3】OSI 七层模型
+     应用层
+     表示层
+     会话层
+     传输层
+     网络层
+     数据链路层
+     物理层
+
+【4】TCP/IP 四层模型
+     应用层
+     传输层
+     网络层
+     物理层
+
+【5】TCP、UDP 
+     共同点：同为传输层协议
+
+     不同点：
+           TCP：有连接，可靠
+                数据无丢失
+                数据无失序
+                数据无重复
+                数据无失误
+
+           UDP：无连接，不保证可靠
+
+
+【6】Socket
+     是一个编程接口
+     是一种特殊的文件描述符 (everything in Unix is a file)
+     并不仅限于TCP/IP协议
+     面向连接 (Transmission Control Protocol - TCP/IP)
+     无连接 (User Datagram Protocol -UDP 和 Inter-network Packet Exchange - IPX)
+
+
+    IP地址：
+        ip可以被用来确定一个主机。
+
+    端口号：
+        为了区分一台主机接收到的数据包应该转交给哪个进程来进行处理，使用端口号来区别。
+
+        众所周知端口：1~1023（1~255之间为众所周知端口，256~1023端口通常由UNIX系统占用）
+        已登记端口：1024~49151
+        动态或私有端口：49152~65535
+
+     注意：一般使用10000 之后
+
+
+    大端与小端：
+    小端序（little-endian） - 低序字节存储在低地址
+      将低字节存储在起始地址，称为“Little-Endian”字节序，Intel、AMD等采用的是这种方式
+    大端序（big-endian）- 高序字节存储在低地址
+      将高字节存储在起始地址，称为“Big-Endian”字节序，由ARM、Motorola等所采用
+
+    
+    网络中传输的数据必须按网络字节序，即大端字节序
+
+【7】 int socket(int domain, int type, int protocol);
+      功能：创建通信套接字
+      参数：domain   AF_INET  网络通信
+                     AF_LOCAL 本地通信
+            type    SOCK_STREAM  流式套接字
+                    SOCK_DGRAM   数据报套接字
+                    SOCK_RAW     原始套接字
+            protocol  一般为0
+      返回值：成功 文件描述符，失败 -1
+
+【8】int bind(int sockfd, const struct sockaddr *addr,
+                socklen_t addrlen);
+     功能：绑定套接字，填充网络信息结构体
+     参数：sockfd    网络套接字
+           addr      网络结构体地址
+           addrlen   网络结构体的大小
+     返回值：成功0，出错 -1
+
+
+     、、、、、、、、、、、、、、、、、、、、、、、、、、、、、、、、
+      struct sockaddr {
+               sa_family_t sa_family;
+               char        sa_data[14];
+      }
+
+
+
+     、、、、、、、、、、、、、、、、、、、、、、、、、、、、、、、、、
+
+     /* Structure describing an Internet socket address.  */
+225 struct sockaddr_in
+226   {
+227     __SOCKADDR_COMMON (sin_);    // sa_family_t  sin_family
+228     in_port_t sin_port;         /* Port number.  */
+229     struct in_addr sin_addr;        /* Internet address.  */
+230 
+231     /* Pad to size of `struct sockaddr'.  */ 填充空间
+232     unsigned char sin_zero[sizeof (struct sockaddr) -
+233                __SOCKADDR_COMMON_SIZE -
+234                sizeof (in_port_t) -
+235                sizeof (struct in_addr)];
+236   };     
+
+
+
+   #define __SOCKADDR_COMMON(sa_prefix) \                                                                            
+           sa_family_t sa_prefix##family
+
+
+     ##  字符串的拼接，  sin_family
+
+
+  typedef    unsigned short int     sa_family_t;
+
+  typedef    uint16_t               in_port_t;
+
+  typedef    unsigned short int     uint16_t;
+
+
+  /* Internet address.  */
+   typedef uint32_t in_addr_t;
+   struct in_addr
+   {
+     in_addr_t s_addr;
+   };
+
+【9】 in_addr_t inet_addr(const char *cp);
+      功能：将点分十进制的ip地址，转换成in_addr_t 类型
+      参数： cp  ip字符串
+      返回值：成功 返回 in_addr_t　类型的数据
+              出错 -1
+
+      char *inet_ntoa(struct in_addr in);
+
+
+【10】uint16_t htons(uint16_t hostshort);
+      功能：将本地字节序，转换成网络字节序
+      
+
+
+【11】 int listen(int sockfd, int backlog);
+       功能：将sockfd 设置为监听模式
+       参数：sockfd   网络套接字
+             backlog  监听数
+       返回值：成功0，出错 -1
+
+
+【12】int accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen);
+      功能：接收客户端连接请求
+      参数：sockfd   套接字
+            addr     客户端的网络地址结构体
+            addrlen  网络结构体的大小
+      返回值：成功 返回一个新的套接字， 出错 返回-1
+
+
+【13】telnet 192.168.1.196 10001
+      测试远程登录时，服务器编程是否正确。
+
+
+【14】 int connect(int sockfd, const struct sockaddr *addr,
+                   socklen_t addrlen);
+       功能：连接服务器
+       参数：sockfd   网络套接字
+             addr     服务器的网络地址
+             addrlen  网络地址结构体的大小
+       返回值：成功0，出错 -1
+
+
+【15】 ssize_t send(int sockfd, const void *buf, size_t len, int flags);
+       功能：发送消息
+       参数：sockfd  套件字
+             buf     要发送缓存区的首地址
+             len     数据的大小
+             flags   0
+       返回值：成功 实际发送的字节数，出错 -1
+
+
+【16】 ssize_t recv(int sockfd, void *buf, size_t len, int flags);
+       功能：接收消息
+       参数：sockfd   套接字
+             buf      接收缓存区的首地址
+             len      接收数据的大小
+             flags    0
+
+       返回值：成功 接收到的字节数，出错 -1
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+     

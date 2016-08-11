@@ -1,0 +1,142 @@
+【1】IO模型
+     1-- 阻塞I/O
+         最常用、最简单、效率最低
+         读操作中的read、recv、recvfrom
+         写操作中的write、send
+         其他操作：accept、connect
+
+
+     2-- 非阻塞式IO
+         可防止进程阻塞在I/O操作上，需要轮询
+         不常用、效率高
+         
+       #include <unistd.h>
+       #include <fcntl.h>
+
+       int fcntl(int fd, int cmd, ... /* arg */ );
+       功能：对文件描述符属性进行设置
+       参数：fd   文件描述符
+             cmd  F_GETFL   获取文件的属性  ，此时 arg 被忽略
+                  F_SETFL   设置文件的属性，此时arg 就是你要设置的信息
+             arg  属性信息
+       返回值：成功 cmd 为 F_GETFL 时 ，获取到的属性信息
+                    cmd 为 F_SETFL 时， 为0
+               失败 -1
+        
+       
+       位操作案例遵循读、改、写原则：
+
+       int  flags = 0;
+
+       flags = fcntl(fd, F_GETFL, 0);
+       flags |= O_NONBLOCK;
+       fcntl(fd, F_SETFL, flags);
+
+
+       或者在打开文件时，进行设置成非阻塞模式。
+       open("", ...|O_NONBLOCK);
+       
+   3-- I/O 多路复用：
+      允许同时对多个I/O进行控制
+
+
+   4-- 信号驱动IO
+       一种异步通信模型
+
+【2】多路IO复用的设计思想
+ 
+    先构造一张有关描述符的表，然后调用一个函数。
+    当这些文件描述符中的一个或多个已准备好进行I/O时函数才返回。
+    函数返回时告诉进程那个描述符已就绪，可以进行I/O操作。
+
+    int select(int nfds, fd_set *readfds, fd_set *writefds,
+                  fd_set *exceptfds, struct timeval *timeout);
+    功能：监听多个文件描述符，阻塞等待一个或者多个文件描述符，准备就绪
+          可以进行IO操作，那么它立即返回。
+    参数：nfds      最大文件描述加1
+          readfds   读文件描述符集合
+          write     写文件描述符集合
+          exceptfds 其他异常的集合
+          timeout   设置阻塞的时间
+    返回值：成功 准备就绪的文件描述符的个数
+                 当timeout 设置了等待时间时，时间达到，没有任何资源准备就绪 ， 返回0
+            出错 -1
+
+    注意：当select 成功返回后，已经准备好的文件描述符，继续保留在集合中，如果没有准备好
+          内核将未准备好的文件描述符，从集合中删除掉。
+
+    void FD_CLR(int fd, fd_set *set);
+    功能：清除set集合中fd
+    
+    int  FD_ISSET(int fd, fd_set *set);
+    功能：判断fd是否在集合set中
+
+    void FD_SET(int fd, fd_set *set);
+    功能：将fd 添加到集合set中
+   
+    void FD_ZERO(fd_set *set);
+    功能：清除集合
+
+【3】服务器模型
+     目前最常用的服务器模型. 
+     循环服务器:
+         循环服务器在同一个时刻只能响应一个客户端的请求
+         UDP / TCP
+ 
+     并发服务器:
+         并发服务器在同一个时刻可以响应多个客户端的请求 
+         TCP /UDP
+
+ 
+
+【4】TCP 并发服务器的设计
+     
+     1-- 基于多进程的并发服务器
+         socket(...); 
+         bind(...); 
+         listen(...);
+         while(1) 
+        { 
+                accept(...); 
+               if (fork() = = 0)
+               { 
+                  while(1) { recv(...); process(...); send(...);}         
+                  close(...); 
+                  exit	    (...); 
+               } 
+          close(...); 
+        }
+
+     2-- 基于select 多路IO复用并发服务器
+         
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                  
